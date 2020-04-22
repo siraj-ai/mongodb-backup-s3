@@ -1,5 +1,7 @@
 #!/bin/bash
 
+wget https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem
+
 MONGODB_HOST=${MONGODB_PORT_27017_TCP_ADDR:-${MONGODB_HOST}}
 MONGODB_HOST=${MONGODB_PORT_1_27017_TCP_ADDR:-${MONGODB_HOST}}
 MONGODB_PORT=${MONGODB_PORT_27017_TCP_PORT:-${MONGODB_PORT}}
@@ -30,7 +32,7 @@ S3BACKUP=${S3PATH}\${BACKUP_NAME}
 S3LATEST=${S3PATH}latest.dump.gz
 aws configure set default.s3.signature_version s3v4
 echo "=> Backup started"
-if mongodump --host ${MONGODB_HOST} --port ${MONGODB_PORT} ${USER_STR}${PASS_STR}${DB_STR} --archive=\${BACKUP_NAME} --gzip ${EXTRA_OPTS} && aws s3 cp \${BACKUP_NAME} \${S3BACKUP} ${REGION_STR} && aws s3 cp \${S3BACKUP} \${S3LATEST} ${REGION_STR} && rm \${BACKUP_NAME} ;then
+if mongodump --ssl --host "${MONGODB_HOST}:${MONGODB_PORT}" ${USER_STR}${PASS_STR}${DB_STR} --sslCAFile rds-combined-ca-bundle.pem --archive=\${BACKUP_NAME} --gzip ${EXTRA_OPTS} && aws s3 cp \${BACKUP_NAME} \${S3BACKUP} ${REGION_STR} && aws s3 cp \${S3BACKUP} \${S3LATEST} ${REGION_STR} && rm \${BACKUP_NAME} ;then
     echo "   > Backup succeeded"
 else
     echo "   > Backup failed"
@@ -52,7 +54,7 @@ fi
 S3RESTORE=${S3PATH}\${RESTORE_ME}
 aws configure set default.s3.signature_version s3v4
 echo "=> Restore database from \${RESTORE_ME}"
-if aws s3 cp \${S3RESTORE} \${RESTORE_ME} ${REGION_STR} && mongorestore --host ${MONGODB_HOST} --port ${MONGODB_PORT} ${USER_STR}${PASS_STR}${DB_STR} --drop --archive=\${RESTORE_ME} --gzip && rm \${RESTORE_ME}; then
+if aws s3 cp \${S3RESTORE} \${RESTORE_ME} ${REGION_STR} && mongorestore --ssl --host "${MONGODB_HOST}:${MONGODB_PORT}" --sslCAFile rds-combined-ca-bundle.pem ${USER_STR}${PASS_STR}${DB_STR} --drop --archive=\${RESTORE_ME} --gzip && rm \${RESTORE_ME}; then
     echo "   Restore succeeded"
 else
     echo "   Restore failed"
