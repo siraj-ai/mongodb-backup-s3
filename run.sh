@@ -1,6 +1,6 @@
 #!/bin/bash
 
-wget https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem
+curl https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem --output rds-combined-ca-bundle.pem
 
 MONGODB_HOST=${MONGODB_PORT_27017_TCP_ADDR:-${MONGODB_HOST}}
 MONGODB_HOST=${MONGODB_PORT_1_27017_TCP_ADDR:-${MONGODB_HOST}}
